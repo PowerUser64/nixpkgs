@@ -1,18 +1,12 @@
 { lib
-, pkg-config
 , stdenv
+, pkg-config
 , fetchFromGitHub
-, hicolor-icon-theme
-, liblo
-, qtbase
-, qttools
-, python3
+, qt5
 , python3Packages
-, wrapQtAppsHook
 , which
+, bash
 }:
-
-with lib;
 
 stdenv.mkDerivation rec {
   pname = "patchance";
@@ -28,29 +22,42 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [
     pkg-config
-    python3
-    python3Packages.pyqt5
+    python3Packages.python
+    python3Packages.pyqt5 # for pyrcc5
     python3Packages.wrapPython
-    qtbase
-    qttools
+    qt5.qtbase
+    qt5.qttools
     which
-    wrapQtAppsHook
+    qt5.wrapQtAppsHook
   ];
 
-  # buildInputs = [
-  #   python3Packages.pyqt5
-  # ];
-
-  pythonPath = with python3Packages; [
-    pyliblo
-    pyqt5
+  buildInputs = [
+    python3Packages.python # for $out/share/patchance/src/patchance.py shebang
   ];
 
-dontWrapQtApps=true;
+  pythonPath = [
+    python3Packages.pyqt5
+    python3Packages.pyqt5_sip
+    #python3Packages.pyliblo
+  ];
+
+  dontWrapQtApps = true;
+  dontWrapPythonPrograms = true;
 
   makeFlags = [
     "PREFIX=$(out)"
   ];
+
+  postInstall = ''
+    rm $out/bin/patchance # a bash script which won't wrap properly
+    makeWrapperArgs+=("''${qtWrapperArgs[@]}")
+    buildPythonPath "$out $pythonPath"
+
+    makeWrapper ${python3Packages.python.interpreter} $out/bin/patchance \
+      ''${makeWrapperArgs[@]} \
+      --prefix PYTHONPATH : "$PYTHONPATH" \
+      --add-flags $out/share/patchance/src/patchance.py
+  '';
 
   meta = with lib; {
     homepage = "https://github.com/Houston4444/Patchance";
@@ -60,7 +67,7 @@ dontWrapQtApps=true;
       It is a direct alternative to Catia or Patchage.
     '';
     license = licenses.gpl2;
-    maintainers = [  ];
+    maintainers = [ ];
     platforms = platforms.linux;
   };
 }

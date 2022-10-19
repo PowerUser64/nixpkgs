@@ -9980,7 +9980,7 @@ with pkgs;
 
   patchage = callPackage ../applications/audio/patchage { };
 
-  patchance = libsForQt5.callPackage ../applications/audio/patchance { };
+  patchance = callPackage ../applications/audio/patchance { };
 
   patatt = callPackage ../development/tools/patatt { };
 
