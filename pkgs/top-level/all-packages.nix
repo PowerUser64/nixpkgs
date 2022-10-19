@@ -9980,6 +9980,8 @@ with pkgs;
 
   patchage = callPackage ../applications/audio/patchage { };
 
+  patchance = libsForQt5.callPackage ../applications/audio/patchance { };
+
   patatt = callPackage ../development/tools/patatt { };
 
   pcapfix = callPackage ../tools/networking/pcapfix { };
@@ -37365,4 +37367,6 @@ with pkgs;
   swaysettings = callPackage ../applications/misc/swaysettings { };
 
   aitrack = libsForQt5.callPackage ../applications/misc/aitrack { };
+
+
 }
