@@ -16,8 +16,11 @@ let
   allowUnfree = config.allowUnfree
     || builtins.getEnv "NIXPKGS_ALLOW_UNFREE" == "1";
 
-  allowNonSource = config.allowNonSource or true
-    && builtins.getEnv "NIXPKGS_ALLOW_NONSOURCE" != "0";
+  allowNonSource = let
+    envVar = builtins.getEnv "NIXPKGS_ALLOW_NONSOURCE";
+  in if envVar != ""
+     then envVar != "0"
+     else config.allowNonSource or true;
 
   allowlist = config.allowlistedLicenses or config.whitelistedLicenses or [];
   blocklist = config.blocklistedLicenses or config.blacklistedLicenses or [];
@@ -70,7 +73,7 @@ let
   allowUnfreePredicate = config.allowUnfreePredicate or (x: false);
 
   # Check whether unfree packages are allowed and if not, whether the
-  # package has an unfree license and is not explicitely allowed by the
+  # package has an unfree license and is not explicitly allowed by the
   # `allowUnfreePredicate` function.
   hasDeniedUnfreeLicense = attrs:
     hasUnfreeLicense attrs &&
@@ -298,7 +301,7 @@ let
     executables = listOf str;
     outputsToInstall = listOf str;
     position = str;
-    available = bool;
+    available = unspecified;
     isBuildPythonPackage = platforms;
     schedulingPriority = int;
     isFcitxEngine = bool;

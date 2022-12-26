@@ -1,4 +1,4 @@
-{ lib, stdenv, python3, openssl, rustPlatform
+{ lib, stdenv, fetchFromGitHub, python3, openssl, rustPlatform
 , enableSystemd ? stdenv.isLinux, nixosTests
 , enableRedis ? true
 , callPackage
@@ -11,23 +11,25 @@ in
 with python3.pkgs;
 buildPythonApplication rec {
   pname = "matrix-synapse";
-  version = "1.68.0";
+  version = "1.74.0";
   format = "pyproject";
 
-  src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-jQcprvKEbLuLWth0aWeh5mi/v8z83GIrjCsm3JdJcUM=";
+  src = fetchFromGitHub {
+    owner = "matrix-org";
+    repo = "synapse";
+    rev = "v${version}";
+    hash = "sha256-UsYodjykcLOgClHegqH598kPoGAI1Z8bLzV5LLE6yLg=";
   };
 
   cargoDeps = rustPlatform.fetchCargoTarball {
     inherit src;
     name = "${pname}-${version}";
-    hash = "sha256-k8iAYRgFCuv6QYAUW5kSEwFSEXVNAEGpPya7biS1Vlo=";
+    hash = "sha256-XOW9DRUhGIs8x5tQ9l2A85sNv736uMmfC72f8FX3g/I=";
   };
 
   postPatch = ''
     # Remove setuptools_rust from runtime dependencies
-    # https://github.com/matrix-org/synapse/blob/v1.68.0/pyproject.toml#L177-L185
+    # https://github.com/matrix-org/synapse/blob/v1.69.0/pyproject.toml#L177-L185
     sed -i '/^setuptools_rust =/d' pyproject.toml
   '';
 

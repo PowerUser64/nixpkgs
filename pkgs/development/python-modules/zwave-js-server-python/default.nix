@@ -10,16 +10,16 @@
 
 buildPythonPackage rec {
   pname = "zwave-js-server-python";
-  version = "0.41.1";
+  version = "0.43.1";
   format = "setuptools";
 
-  disabled = pythonOlder "3.8";
+  disabled = pythonOlder "3.9";
 
   src = fetchFromGitHub {
     owner = "home-assistant-libs";
     repo = pname;
     rev = "refs/tags/${version}";
-    hash = "sha256-V4QEsHkakqYsZ09Q8BJG9fhREdGboirF5sNxm8t+dAQ=";
+    hash = "sha256-qnGMUY7c2jqLQbVybVdu9vWcPMFoxCnCCTBhWP+AXE0=";
   };
 
   propagatedBuildInputs = [

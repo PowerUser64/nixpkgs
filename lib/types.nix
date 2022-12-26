@@ -262,7 +262,8 @@ rec {
     };
 
     unspecified = mkOptionType {
-      name = "unspecified value";
+      name = "unspecified";
+      description = "unspecified value";
       descriptionClass = "noun";
     };
 
@@ -477,6 +478,7 @@ rec {
 
     path = mkOptionType {
       name = "path";
+      descriptionClass = "noun";
       check = x: isCoercibleToString x && builtins.substring 0 1 (toString x) == "/";
       merge = mergeEqualOption;
     };
@@ -556,15 +558,6 @@ rec {
       nestedTypes.elemType = elemType;
     };
 
-    # TODO: drop this in the future:
-    loaOf = elemType: types.attrsOf elemType // {
-      name = "loaOf";
-      deprecationMessage = "Mixing lists with attribute values is no longer"
-        + " possible; please use `types.attrsOf` instead. See"
-        + " https://github.com/NixOS/nixpkgs/issues/1800 for the motivation.";
-      nestedTypes.elemType = elemType;
-    };
-
     # Value of given type but with no merging (i.e. `uniq list`s are not concatenated).
     uniq = elemType: mkOptionType rec {
       name = "uniq";
@@ -616,8 +609,8 @@ rec {
       descriptionClass = "composite";
       check = isFunction;
       merge = loc: defs:
-        fnArgs: (mergeDefinitions (loc ++ [ "[function body]" ]) elemType (map (fn: { inherit (fn) file; value = fn.value fnArgs; }) defs)).mergedValue;
-      getSubOptions = prefix: elemType.getSubOptions (prefix ++ [ "[function body]" ]);
+        fnArgs: (mergeDefinitions (loc ++ [ "<function body>" ]) elemType (map (fn: { inherit (fn) file; value = fn.value fnArgs; }) defs)).mergedValue;
+      getSubOptions = prefix: elemType.getSubOptions (prefix ++ [ "<function body>" ]);
       getSubModules = elemType.getSubModules;
       substSubModules = m: functionTo (elemType.substSubModules m);
       functor = (defaultFunctor "functionTo") // { wrapped = elemType; };

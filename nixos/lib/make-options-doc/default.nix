@@ -19,13 +19,15 @@
 { pkgs
 , lib
 , options
-, transformOptions ? lib.id  # function for additional tranformations of the options
+, transformOptions ? lib.id  # function for additional transformations of the options
 , documentType ? "appendix" # TODO deprecate "appendix" in favor of "none"
                             #      and/or rename function to moduleOptionDoc for clean slate
 
   # If you include more than one option list into a document, you need to
   # provide different ids.
 , variablelistId ? "configuration-variable-list"
+  # String to prefix to the option XML/HTML id attributes.
+, optionIdPrefix ? "opt-"
 , revision ? "" # Specify revision for the options
 # a set of options the docs we are generating will be merged into, as if by recursiveUpdate.
 # used to split the options doc build into a static part (nixos/modules) and a dynamic part
@@ -38,31 +40,16 @@
 # `false`, and a different renderer may be used with different bugs and performance
 # characteristics but (hopefully) indistinguishable output.
 , allowDocBook ? true
+# whether lib.mdDoc is required for descriptions to be read as markdown.
+, markdownByDefault ? false
 }:
 
 let
-  # Make a value safe for JSON. Functions are replaced by the string "<function>",
-  # derivations are replaced with an attrset
-  # { _type = "derivation"; name = <name of that derivation>; }.
-  # We need to handle derivations specially because consumers want to know about them,
-  # but we can't easily use the type,name subset of keys (since type is often used as
-  # a module option and might cause confusion). Use _type,name instead to the same
-  # effect, since _type is already used by the module system.
-  substSpecial = x:
-    if lib.isDerivation x then { _type = "derivation"; name = x.name; }
-    else if builtins.isAttrs x then lib.mapAttrs (name: substSpecial) x
-    else if builtins.isList x then map substSpecial x
-    else if lib.isFunction x then "<function>"
-    else x;
-
   rawOpts = lib.optionAttrSetToDocList options;
   transformedOpts = map transformOptions rawOpts;
   filteredOpts = lib.filter (opt: opt.visible && !opt.internal) transformedOpts;
   optionsList = lib.flip map filteredOpts
    (opt: opt
-    // lib.optionalAttrs (opt ? example) { example = substSpecial opt.example; }
-    // lib.optionalAttrs (opt ? default) { default = substSpecial opt.default; }
-    // lib.optionalAttrs (opt ? type) { type = substSpecial opt.type; }
     // lib.optionalAttrs (opt ? relatedPackages && opt.relatedPackages != []) { relatedPackages = genRelatedPackages opt.relatedPackages opt.name; }
    );
 
@@ -106,24 +93,34 @@ let
 in rec {
   inherit optionsNix;
 
-  optionsAsciiDoc = pkgs.runCommand "options.adoc" {} ''
-    ${pkgs.python3Minimal}/bin/python ${./generateAsciiDoc.py} \
-      < ${optionsJSON}/share/doc/nixos/options.json \
+  optionsAsciiDoc = pkgs.runCommand "options.adoc" {
+    nativeBuildInputs = [ pkgs.python3Minimal ];
+  } ''
+    python ${./generateDoc.py} \
+      --format asciidoc \
+      ${optionsJSON}/share/doc/nixos/options.json \
       > $out
   '';
 
-  optionsCommonMark = pkgs.runCommand "options.md" {} ''
-    ${pkgs.python3Minimal}/bin/python ${./generateCommonMark.py} \
-      < ${optionsJSON}/share/doc/nixos/options.json \
+  optionsCommonMark = pkgs.runCommand "options.md" {
+    nativeBuildInputs = [ pkgs.python3Minimal ];
+  } ''
+    python ${./generateDoc.py} \
+      --format commonmark \
+      ${optionsJSON}/share/doc/nixos/options.json \
       > $out
   '';
 
   optionsJSON = pkgs.runCommand "options.json"
     { meta.description = "List of NixOS options in JSON format";
-      buildInputs = [
+      nativeBuildInputs = [
         pkgs.brotli
         (let
-          self = (pkgs.python3Minimal.override {
+          # python3Minimal can't be overridden with packages on Darwin, due to a missing framework.
+          # Instead of modifying stdenv, we take the easy way out, since most people on Darwin will
+          # just be hacking on the Nixpkgs manual (which also uses make-options-doc).
+          python = if pkgs.stdenv.isDarwin then pkgs.python3 else pkgs.python3Minimal;
+          self = (python.override {
             inherit self;
             includeSiteCustomize = true;
            });
@@ -146,6 +143,7 @@ in rec {
       python ${./mergeJSON.py} \
         ${lib.optionalString warningsAreErrors "--warnings-are-errors"} \
         ${lib.optionalString (! allowDocBook) "--error-on-docbook"} \
+        ${lib.optionalString markdownByDefault "--markdown-by-default"} \
         $baseJSON $options \
         > $dst/options.json
 
@@ -159,16 +157,20 @@ in rec {
   # Convert options.json into an XML file.
   # The actual generation of the xml file is done in nix purely for the convenience
   # of not having to generate the xml some other way
-  optionsXML = pkgs.runCommand "options.xml" {} ''
+  optionsXML = pkgs.runCommand "options.xml" {
+    nativeBuildInputs = with pkgs; [ nix ];
+  } ''
     export NIX_STORE_DIR=$TMPDIR/store
     export NIX_STATE_DIR=$TMPDIR/state
-    ${pkgs.nix}/bin/nix-instantiate \
+    nix-instantiate \
       --eval --xml --strict ${./optionsJSONtoXML.nix} \
       --argstr file ${optionsJSON}/share/doc/nixos/options.json \
       > "$out"
   '';
 
-  optionsDocBook = pkgs.runCommand "options-docbook.xml" {} ''
+  optionsDocBook = pkgs.runCommand "options-docbook.xml" {
+    nativeBuildInputs = with pkgs; [ libxslt.bin libxslt.bin python3Minimal ];
+  } ''
     optionsXML=${optionsXML}
     if grep /nixpkgs/nixos/modules $optionsXML; then
       echo "The manual appears to depend on the location of Nixpkgs, which is bad"
@@ -178,13 +180,14 @@ in rec {
       exit 1
     fi
 
-    ${pkgs.python3Minimal}/bin/python ${./sortXML.py} $optionsXML sorted.xml
-    ${pkgs.libxslt.bin}/bin/xsltproc \
+    python ${./sortXML.py} $optionsXML sorted.xml
+    xsltproc \
       --stringparam documentType '${documentType}' \
       --stringparam revision '${revision}' \
       --stringparam variablelistId '${variablelistId}' \
+      --stringparam optionIdPrefix '${optionIdPrefix}' \
       -o intermediate.xml ${./options-to-docbook.xsl} sorted.xml
-    ${pkgs.libxslt.bin}/bin/xsltproc \
+    xsltproc \
       -o "$out" ${./postprocess-option-descriptions.xsl} intermediate.xml
   '';
 }

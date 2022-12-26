@@ -183,7 +183,7 @@ in
         file = mkOption {
           type = types.nullOr types.str;
           default = null;
-          description = lib.mdDoc "Filename to be used for the dump. If `null` a default name is choosen by gitea.";
+          description = lib.mdDoc "Filename to be used for the dump. If `null` a default name is chosen by gitea.";
           example = "gitea-dump";
         };
       };
@@ -235,7 +235,7 @@ in
       };
 
       httpPort = mkOption {
-        type = types.int;
+        type = types.port;
         default = 3000;
         description = lib.mdDoc "HTTP listen port.";
       };
@@ -310,7 +310,7 @@ in
               };
 
               SSH_PORT = mkOption {
-                type = types.int;
+                type = types.port;
                 default = 22;
                 example = 2222;
                 description = lib.mdDoc ''
@@ -483,11 +483,11 @@ in
       description = "gitea";
       after = [ "network.target" ] ++ lib.optional usePostgresql "postgresql.service" ++ lib.optional useMysql "mysql.service";
       wantedBy = [ "multi-user.target" ];
-      path = [ gitea pkgs.git ];
+      path = [ gitea pkgs.git pkgs.gnupg ];
 
       # In older versions the secret naming for JWT was kind of confusing.
       # The file jwt_secret hold the value for LFS_JWT_SECRET and JWT_SECRET
-      # wasn't persistant at all.
+      # wasn't persistent at all.
       # To fix that, there is now the file oauth2_jwt_secret containing the
       # values for JWT_SECRET and the file jwt_secret gets renamed to
       # lfs_jwt_secret.
@@ -592,7 +592,7 @@ in
         PrivateMounts = true;
         # System Call Filtering
         SystemCallArchitectures = "native";
-        SystemCallFilter = "~@clock @cpu-emulation @debug @keyring @memlock @module @mount @obsolete @raw-io @reboot @resources @setuid @swap";
+        SystemCallFilter = "~@clock @cpu-emulation @debug @keyring @memlock @module @mount @obsolete @raw-io @reboot @setuid @swap";
       };
 
       environment = {

@@ -20,20 +20,6 @@ let
     packageOverrides = self: super: {
       django = super.django_4;
 
-      # use paperless-ngx version of django-q
-      # see https://github.com/paperless-ngx/paperless-ngx/pull/1014
-      django-q = super.django-q.overridePythonAttrs (oldAttrs: rec {
-        src = fetchFromGitHub {
-          owner = "paperless-ngx";
-          repo = "django-q";
-          hash = "sha256-alu7tZwUn77xhUF9c/aGmwRwO//mR/FucXjvXUl/6ek=";
-          rev = "8b5289d8caf36f67fb99448e76ead20d5b498c1b";
-        };
-        # due to paperless-ngx modification of the pyproject.toml file
-        # the patch is not needed any more
-        patches = [ ];
-      });
-
       aioredis = super.aioredis.overridePythonAttrs (oldAttrs: rec {
         version = "1.3.1";
         src = oldAttrs.src.override {
@@ -42,8 +28,40 @@ let
         };
       });
 
-      eth-keys = super.eth-keys.overridePythonAttrs (_: {
-        doCheck = false;
+      # downgrade redis due to https://github.com/paperless-ngx/paperless-ngx/pull/1802
+      # and https://github.com/django/channels_redis/issues/332
+      channels-redis = super.channels-redis.overridePythonAttrs (oldAttrs: rec {
+        version = "3.4.1";
+        src = fetchFromGitHub {
+          owner = "django";
+          repo = "channels_redis";
+          rev = version;
+          hash = "sha256-ZQSsE3pkM+nfDhWutNuupcyC5MDikUu6zU4u7Im6bRQ=";
+        };
+      });
+
+      channels = super.channels.overridePythonAttrs (oldAttrs: rec {
+        version = "3.0.5";
+        pname = "channels";
+        src = fetchFromGitHub {
+          owner = "django";
+          repo = pname;
+          rev = version;
+          sha256 = "sha256-bKrPLbD9zG7DwIYBst1cb+zkDsM8B02wh3D80iortpw=";
+        };
+        propagatedBuildInputs = oldAttrs.propagatedBuildInputs ++ [ self.daphne ];
+        pytestFlagsArray = [ "--asyncio-mode=auto" ];
+      });
+
+      daphne = super.daphne.overridePythonAttrs (oldAttrs: rec {
+        version = "3.0.2";
+        pname = "daphne";
+        src = fetchFromGitHub {
+          owner = "django";
+          repo = pname;
+          rev = version;
+          hash = "sha256-KWkMV4L7bA2Eo/u4GGif6lmDNrZAzvYyDiyzyWt9LeI=";
+        };
       });
     };
   };
@@ -61,12 +79,12 @@ let
 in
 python.pkgs.pythonPackages.buildPythonApplication rec {
   pname = "paperless-ngx";
-  version = "1.9.1";
+  version = "1.10.2";
 
-  # Fetch the release tarball instead of a git ref because it contains the prebuilt fontend
+  # Fetch the release tarball instead of a git ref because it contains the prebuilt frontend
   src = fetchurl {
     url = "https://github.com/paperless-ngx/paperless-ngx/releases/download/v${version}/${pname}-v${version}.tar.xz";
-    hash = "sha256-KWq3zUES8klXexNO9krlqZKZEajOhkTHF13t/3rxrPc=";
+    hash = "sha256-uOrRHHNqIYsDbzKcA7EsYZjadpLyAB4Ks+PU+BNsTWE=";
   };
 
   format = "other";
@@ -80,6 +98,7 @@ python.pkgs.pythonPackages.buildPythonApplication rec {
     autobahn
     automat
     blessed
+    celery
     certifi
     cffi
     channels-redis
@@ -92,11 +111,11 @@ python.pkgs.pythonPackages.buildPythonApplication rec {
     cryptography
     daphne
     dateparser
+    django-celery-results
     django-cors-headers
     django-extensions
     django-filter
     django-picklefield
-    django-q
     django
     djangorestframework
     filelock
@@ -115,7 +134,6 @@ python.pkgs.pythonPackages.buildPythonApplication rec {
     inotifyrecursive
     joblib
     langdetect
-    pkgs.libmysqlclient
     lxml
     msgpack
     numpy
@@ -140,6 +158,7 @@ python.pkgs.pythonPackages.buildPythonApplication rec {
     pytz
     pyyaml
     pyzbar
+    rapidfuzz
     redis
     regex
     reportlab
@@ -168,13 +187,6 @@ python.pkgs.pythonPackages.buildPythonApplication rec {
     zope_interface
   ];
 
-  # paperless-ngx includes the bundled django-q version. This will
-  # conflict with the tests and is not needed since we overrode the
-  # django-q version with the paperless-ngx version
-  postPatch = ''
-    rm -rf src/django-q
-  '';
-
   # Compile manually because `pythonRecompileBytecodeHook` only works for
   # files in `python.sitePackages`
   postBuild = ''
@@ -199,7 +211,9 @@ python.pkgs.pythonPackages.buildPythonApplication rec {
     pytestCheckHook
   ];
 
-  pytestFlagsArray = [ "src" ];
+  pytestFlagsArray = [
+    "src"
+  ];
 
   # The tests require:
   # - PATH with runtime binaries
@@ -213,7 +227,19 @@ python.pkgs.pythonPackages.buildPythonApplication rec {
     # Disable unneeded code coverage test
     substituteInPlace src/setup.cfg \
       --replace "--cov --cov-report=html" ""
+    # OCR on NixOS recognizes the space in the picture, upstream CI doesn't.
+    # See https://github.com/paperless-ngx/paperless-ngx/pull/2216
+    substituteInPlace src/paperless_tesseract/tests/test_parser.py \
+      --replace "this is awebp document" "this is a webp document"
   '';
+
+  disabledTests = [
+    # FileNotFoundError(2, 'No such file or directory'): /build/tmp...
+    "test_script_with_output"
+    # AssertionError: 10 != 4 (timezone/time issue)
+    # Due to getting local time from modification date in test_consumer.py
+    "testNormalOperation"
+  ];
 
   passthru = {
     inherit python path;
@@ -221,8 +247,8 @@ python.pkgs.pythonPackages.buildPythonApplication rec {
   };
 
   meta = with lib; {
-    description = "A supercharged version of paperless: scan, index, and archive all of your physical documents";
-    homepage = "https://paperless-ngx.readthedocs.io/en/latest/";
+    description = "Tool to scan, index, and archive all of your physical documents";
+    homepage = "https://paperless-ngx.readthedocs.io/";
     license = licenses.gpl3Only;
     maintainers = with maintainers; [ lukegb gador erikarvstedt ];
   };

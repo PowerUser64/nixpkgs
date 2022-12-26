@@ -144,7 +144,7 @@ exitHandler() {
             echo "build failed with exit code $exitCode (ignored)"
             mkdir -p "$out/nix-support"
             printf "%s" "$exitCode" > "$out/nix-support/failed"
-            return 0
+            exit 0
         fi
 
     else
@@ -1100,7 +1100,7 @@ buildPhase() {
         # Old bash empty array hack
         # shellcheck disable=SC2086
         local flagsArray=(
-            ${enableParallelBuilding:+-j${NIX_BUILD_CORES} -l${NIX_BUILD_CORES}}
+            ${enableParallelBuilding:+-j${NIX_BUILD_CORES}}
             SHELL=$SHELL
             $makeFlags "${makeFlagsArray[@]}"
             $buildFlags "${buildFlagsArray[@]}"
@@ -1139,7 +1139,7 @@ checkPhase() {
         # Old bash empty array hack
         # shellcheck disable=SC2086
         local flagsArray=(
-            ${enableParallelChecking:+-j${NIX_BUILD_CORES} -l${NIX_BUILD_CORES}}
+            ${enableParallelChecking:+-j${NIX_BUILD_CORES}}
             SHELL=$SHELL
             $makeFlags "${makeFlagsArray[@]}"
             ${checkFlags:-VERBOSE=y} "${checkFlagsArray[@]}"
@@ -1273,7 +1273,7 @@ installCheckPhase() {
         # Old bash empty array hack
         # shellcheck disable=SC2086
         local flagsArray=(
-            ${enableParallelChecking:+-j${NIX_BUILD_CORES} -l${NIX_BUILD_CORES}}
+            ${enableParallelChecking:+-j${NIX_BUILD_CORES}}
             SHELL=$SHELL
             $makeFlags "${makeFlagsArray[@]}"
             $installCheckFlags "${installCheckFlagsArray[@]}"

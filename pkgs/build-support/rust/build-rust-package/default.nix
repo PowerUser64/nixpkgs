@@ -9,6 +9,7 @@
 , cargoBuildHook
 , cargoCheckHook
 , cargoInstallHook
+, cargoNextestHook
 , cargoSetupHook
 , rustc
 , libiconv
@@ -40,6 +41,7 @@
 , checkNoDefaultFeatures ? buildNoDefaultFeatures
 , buildFeatures ? [ ]
 , checkFeatures ? buildFeatures
+, useNextest ? false
 , depsExtraArgs ? {}
 
 # Toggles whether a custom sysroot is created when the target is a .json file.
@@ -117,14 +119,13 @@ stdenv.mkDerivation ((removeAttrs args [ "depsExtraArgs" "cargoUpdateHook" "carg
     cacert
     git
     cargoBuildHook
-    cargoCheckHook
+    (if useNextest then cargoNextestHook else cargoCheckHook)
     cargoInstallHook
     cargoSetupHook
     rustc
   ];
 
   buildInputs = buildInputs
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [ libiconv ]
     ++ lib.optionals stdenv.hostPlatform.isMinGW [ windows.pthreads ];
 
   patches = cargoPatches ++ patches;

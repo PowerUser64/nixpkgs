@@ -45,7 +45,7 @@ assert stdenv.buildPlatform.isDarwin -> gnused != null;
 assert langGo -> langCC;
 
 # threadsCross is just for MinGW
-assert threadsCross != null -> stdenv.targetPlatform.isWindows;
+assert threadsCross != {} -> stdenv.targetPlatform.isWindows;
 
 # profiledCompiler builds inject non-determinism in one of the compilation stages.
 # If turned on, we can't provide reproducible builds anymore
@@ -147,7 +147,7 @@ stdenv.mkDerivation ({
 
   hardeningDisable = [ "format" "pie" ];
 
-  # When targetting darwin, libgcc_ext.10.{4,5}.dylib are created as
+  # When targeting darwin, libgcc_ext.10.{4,5}.dylib are created as
   # MH_DYLIB_STUB files, which install_name_tool can't change, so we
   # get a cycle between $out and $lib.
   outputs = if langJava || langGo || targetPlatform.isDarwin then ["out" "man" "info"]
@@ -208,7 +208,7 @@ stdenv.mkDerivation ({
     ++ (optionals javaAwtGtk ([ gtk2 libart_lgpl ] ++ xlibs))
     ;
 
-  depsTargetTarget = optional (!crossStageStatic && threadsCross != null) threadsCross;
+  depsTargetTarget = optional (!crossStageStatic && threadsCross != {}) threadsCross;
 
   preConfigure = import ../common/pre-configure.nix {
     inherit lib;
@@ -224,7 +224,7 @@ stdenv.mkDerivation ({
       lib
       stdenv
       targetPackages
-      crossStageStatic libcCross
+      crossStageStatic libcCross threadsCross
       version
 
       gmp mpfr libmpc isl

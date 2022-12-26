@@ -2,16 +2,16 @@
 
 stdenv.mkDerivation rec {
   pname = "julia-bin";
-  version = "1.8.1";
+  version = "1.8.4";
 
   src = {
     x86_64-linux = fetchurl {
       url = "https://julialang-s3.julialang.org/bin/linux/x64/${lib.versions.majorMinor version}/julia-${version}-linux-x86_64.tar.gz";
-      sha256 = "sha256-MwVO5kfuik+1T8BREOB+C1PgRZH+U9Cky0x+16BekfE=";
+      sha256 = "sha256-8EJ6TXkQxH3Hwx9lun7Kr+27wOzrOcMgo3+jNZgAT9U=";
     };
     aarch64-linux = fetchurl {
       url = "https://julialang-s3.julialang.org/bin/linux/aarch64/${lib.versions.majorMinor version}/julia-${version}-linux-aarch64.tar.gz";
-      sha256 = "sha256-ugaDesKJlUe7t5mYnxFGT+zWeCImhxw7ekhhlIEEJnk=";
+      sha256 = "sha256-3EeYwc6HaPo1ly6LFJyjqF/GnhB0tgmnKyz+1cSqcFA=";
     };
   }.${stdenv.hostPlatform.system} or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
 

@@ -43,14 +43,14 @@
 
 buildPythonPackage rec {
   pname = "Django";
-  version = "4.1.1";
+  version = "4.1.4";
   format = "pyproject";
 
   disabled = pythonOlder "3.8";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-oVP/1RQ78mqHe/ri9Oxzbr2JJKRmAMoImtlrVKHU4o4=";
+    hash = "sha256-04pOEI0jhsuWN9pmqC3I0HM8rt5Mg8Sv29p4r0IUIRs=";
   };
 
   patches = [
@@ -113,6 +113,7 @@ buildPythonPackage rec {
   '';
 
   meta = with lib; {
+    changelog = "https://docs.djangoproject.com/en/${lib.versions.majorMinor version}/releases/${version}/";
     description = "A high-level Python Web framework that encourages rapid development and clean, pragmatic design.";
     homepage = "https://www.djangoproject.com";
     license = licenses.bsd3;

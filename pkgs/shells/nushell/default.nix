@@ -1,6 +1,7 @@
 { stdenv
 , lib
 , fetchFromGitHub
+, fetchpatch
 , runCommand
 , rustPlatform
 , openssl
@@ -20,20 +21,21 @@
 , withExtraFeatures ? true
 , testers
 , nushell
+, nix-update-script
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "nushell";
-  version = "0.68.1";
+  version = "0.73.0";
 
   src = fetchFromGitHub {
     owner = pname;
     repo = pname;
     rev = version;
-    sha256 = "sha256-PE6UewAE7z0Ie5aFocDK3Qu0Y4ppuPtpD6tDnYfM11Y=";
+    sha256 = "sha256-hxcB5nzhVjsC5XYR4Pt3GN4ZEgWpetQQZr0mj3bAnRc=";
   };
 
-  cargoSha256 = "sha256-7guFkR/paL8jk5YwiRNMbWCyA6DqOaLGTmbWHAWDxRw=";
+  cargoSha256 = "sha256-pw+pBZeXuKSaP/qC3aiauXAH/BRR1rQZ2jVVmR1JQhU=";
 
   # enable pkg-config feature of zstd
   cargoPatches = [ ./zstd-pkg-config.patch ];
@@ -87,6 +89,9 @@ rustPlatform.buildRustPackage rec {
     shellPath = "/bin/nu";
     tests.version = testers.testVersion {
       package = nushell;
+    };
+    updateScript = nix-update-script {
+      attrPath = pname;
     };
   };
 }
