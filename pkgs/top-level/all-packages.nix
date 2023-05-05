@@ -30722,6 +30722,8 @@ with pkgs;
 
   rhvoice = callPackage ../applications/audio/rhvoice { };
 
+  uhhyou-plugins = callPackage ../applications/audio/uhhyou-plugins { };
+
   svox = callPackage ../applications/audio/svox { };
 
   giada = callPackage ../applications/audio/giada { };
