@@ -13,6 +13,7 @@
 , freetype
 , xcbutilcursor
 }:
+
 stdenv.mkDerivation rec {
   pname = "uhhyou-plugins";
   version = "0.54.3";
@@ -38,6 +39,12 @@ stdenv.mkDerivation rec {
     pango
     xcbutil
     xcbutilkeysyms
+  ];
+  cmakeFlags = [
+    "-DCMAKE_BUILD_TYPE=Release"
+    "-DSMTG_MYPLUGINS_SRC_PATH=../../VSTPlugins"
+    "-DSMTG_ADD_VST3_HOSTING_SAMPLES=FALSE"
+    "-DSMTG_ADD_VST3_PLUGINS_SAMPLES=FALSE"
   ];
 
   meta = with lib; {
