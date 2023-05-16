@@ -1,31 +1,31 @@
 { stdenv, lib, fetchFromGitHub, cmake, pkg-config
-, libX11, glfw, glew, fftwFloat, volk, AppKit
+, libX11, glfw, glew, fftwFloat, volk, AppKit, zstd
 # Sources
-, airspy_source ? true, airspy
-, airspyhf_source ? true, airspyhf
+, airspy_source ? false, airspy
+, airspyhf_source ? false, airspyhf
 , bladerf_source ? false, libbladeRF
 , file_source ? true
-, hackrf_source ? true, hackrf
+, hackrf_source ? false, hackrf
 , limesdr_source ? false, limesuite
 , sddc_source ? false
 , rtl_sdr_source ? true, rtl-sdr, libusb1
 , rtl_tcp_source ? true
 , sdrplay_source ? false, sdrplay
 , soapy_source ? true, soapysdr
-, spyserver_source ? true
-, plutosdr_source ? stdenv.isLinux, libiio, libad9361
+, spyserver_source ? false
+, plutosdr_source ? false, libiio, libad9361
 # Sinks
 , audio_sink ? true, rtaudio
 , portaudio_sink ? false, portaudio
 , network_sink ? true
 # Decoders
 , falcon9_decoder ? false
-, m17_decoder ? false, codec2
+, m17_decoder ? true, codec2
 , meteor_demodulator ? true
 , radio ? true
-, weather_sat_decoder ? true
+, weather_sat_decoder ? false
 # Misc
-, discord_presence ? true
+, discord_presence ? false
 , frequency_manager ? true
 , recorder ? true
 , rigctl_server ? true
@@ -33,13 +33,13 @@
 
 stdenv.mkDerivation rec {
   pname = "sdrpp";
-  version = "1.0.4";
+  version = "nightly";
 
   src = fetchFromGitHub {
     owner = "AlexandreRouma";
     repo = "SDRPlusPlus";
-    rev = version;
-    hash = "sha256-g9tpWvVRMXRhPfgvOeJhX6IMouF9+tLUr9wo5r35i/c=";
+    rev = "b89fdba433cf6aa0dab424a06974a0b45abf6c4a";
+    hash = "sha256-4sJhODH46ueb2bt8RGxVBmbTbsmZ9ARuPkZ13oaSgYY=";
   };
 
   patches = [ ./runtime-prefix.patch ];
@@ -54,7 +54,7 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ cmake pkg-config ];
 
-  buildInputs = [ glfw glew fftwFloat volk ]
+  buildInputs = [ glfw glew fftwFloat volk zstd ]
     ++ lib.optional stdenv.isDarwin AppKit
     ++ lib.optional stdenv.isLinux libX11
     ++ lib.optional airspy_source airspy
