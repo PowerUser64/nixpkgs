@@ -5,7 +5,7 @@
 , qt5
 , python3Packages
 , which
-, bash
+, libjack2
 }:
 
 stdenv.mkDerivation rec {
@@ -29,10 +29,12 @@ stdenv.mkDerivation rec {
     qt5.qttools
     which
     qt5.wrapQtAppsHook
+    libjack2
   ];
 
   buildInputs = [
     python3Packages.python # for $out/share/patchance/src/patchance.py shebang
+    libjack2
   ];
 
   pythonPath = [
