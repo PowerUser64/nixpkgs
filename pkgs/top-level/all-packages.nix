@@ -6422,6 +6422,8 @@ with pkgs;
 
   eyedropper = callPackage ../applications/graphics/eyedropper { };
 
+  evdevhook = callPackage ../misc/drivers/evdevhook { };
+
   persistent-evdev = python3Packages.callPackage ../servers/persistent-evdev { };
 
   evscript = callPackage ../tools/inputmethods/evscript { };
