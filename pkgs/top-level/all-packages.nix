@@ -15093,6 +15093,8 @@ with pkgs;
 
   zip = callPackage ../tools/archivers/zip { };
 
+  zinc = callPackage ../applications/audio/zinc { };
+
   zincsearch = callPackage ../servers/search/zincsearch { };
 
   zkfuse = callPackage ../tools/filesystems/zkfuse { };
