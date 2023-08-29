@@ -10,13 +10,13 @@
 
 stdenv.mkDerivation rec {
   pname = "patchance";
-  version = "0.2.3";
+  version = "1.1.0";
 
   src = fetchFromGitHub {
     owner = "Houston4444";
     repo = pname;
     rev = "v${version}";
-    sha256 = "sha256-HCctWtdQYirkHznNjBbgXcwONAtNVqyg+wo4Nfwd15c=";
+    sha256 = "sha256-LzhJPdRXAbqyq1e0kMCp3QbvJu2Dx6oQEy8Gon7QnMg=";
     fetchSubmodules = true;
   };
 
