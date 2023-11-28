@@ -38,8 +38,8 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "AlexandreRouma";
     repo = "SDRPlusPlus";
-    rev = "b89fdba433cf6aa0dab424a06974a0b45abf6c4a";
-    hash = "sha256-4sJhODH46ueb2bt8RGxVBmbTbsmZ9ARuPkZ13oaSgYY=";
+    rev = "794d6ff5acf66d5da7fb7fceba7b952c95305960";
+    hash = "sha256-usP5WUXxIJkr/y4X8TXioJKamY17RRfMnwVHRUotKZk=";
   };
 
   patches = [ ./runtime-prefix.patch ];
