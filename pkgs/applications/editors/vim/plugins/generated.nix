@@ -17382,5 +17382,17 @@ final: prev:
     meta.homepage = "https://github.com/pteroctopus/faster.nvim";
   };
 
+  btw-nvim = buildVimPlugin {
+    pname = "btw-nvim";
+    version = "2024-04-10";
+    src = fetchFromGitHub {
+      owner = "letieu";
+      repo = "btw.nvim";
+      rev = "47f6419e90d3383987fd06e8f3e06a4bc032ac83";
+      sha256 = "sha256-91DZUfa4FBvXnkcNHdllr82Dr1Ie+MGVD3ibwkqo04c=";
+    };
+    meta.homepage = "https://github.com/letieu/btw.nvim";
+  };
+
 
 }
