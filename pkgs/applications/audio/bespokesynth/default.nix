@@ -75,6 +75,10 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ python3 makeWrapper cmake pkg-config ninja ];
 
+  patches = [
+    ./pipewire-juce.patch  # Fixes problems with using JUCE applications with pipewire
+  ];
+
   buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
     # List obtained from https://github.com/BespokeSynth/BespokeSynth/blob/main/azure-pipelines.yml
     libX11
